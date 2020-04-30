@@ -13,14 +13,26 @@ Environment:
 
 --*/
 
+#define __EXTENSIONS__
+#define _XPG4_2
 #define _GNU_SOURCE
 #include "platform_internal.h"
 #include <sys/epoll.h>
 #include <sys/eventfd.h>
 #include <inttypes.h>
-#include <linux/in6.h>
+//#include <linux/in6.h>
 #include <arpa/inet.h>
 #include "quic_platform_dispatch.h"
+
+#ifndef TEMP_FAILURE_RETRY
+#define TEMP_FAILURE_RETRY(expression) ({       \
+    __typeof(expression) __result;              \
+    do                                          \
+    {                                           \
+        __result = (expression);                \
+    } while (__result == -1 && errno == EINTR); \
+    __result; })
+#endif
 
 QUIC_STATIC_ASSERT((SIZEOF_STRUCT_MEMBER(QUIC_BUFFER, Length) <= sizeof(size_t)), "(sizeof(QUIC_BUFFER.Length) == sizeof(size_t) must be TRUE.");
 QUIC_STATIC_ASSERT((SIZEOF_STRUCT_MEMBER(QUIC_BUFFER, Buffer) == sizeof(void*)), "(sizeof(QUIC_BUFFER.Buffer) == sizeof(void*) must be TRUE.");
@@ -788,12 +800,21 @@ QuicSocketContextInitialize(
     // apparent alternative.
     // TODO: Verify this.
     //
+#ifdef IP_PMTUDISC_DO // Linux
+    const int optionName = IP_MTU_DISCOVER;
     Option = IP_PMTUDISC_DO;
+#elif defined(IP_DONTFRAG) // FreeBSD, Solaris
+    const int optionName = IP_DONTFRAG;
+#elif defined(IP_DONTFRAGMENT)  // Windows
+    const int optionName = IP_DONTFRAGMENT;
+#else
+    const int optionName = 0;
+#endif
     Result =
         setsockopt(
             SocketContext->SocketFd,
             IPPROTO_IP,
-            IP_MTU_DISCOVER,
+            optionName,
             (const void*)&Option,
             sizeof(Option));
     if (Result == SOCKET_ERROR) {

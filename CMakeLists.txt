@@ -120,7 +120,7 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
 
 else()
     # Custom build flags.
-    set(QUIC_COMMON_FLAGS "-DQUIC_PLATFORM_LINUX -fms-extensions -fPIC -pthread -Wl,--no-as-needed -ldl")
+    set(QUIC_COMMON_FLAGS "-DQUIC_PLATFORM_LINUX -fms-extensions -fPIC -pthread -ldl")
 
     #if(QUIC_TLS STREQUAL "x64")
     #    set(QUIC_COMMON_FLAGS "${QUIC_COMMON_FLAGS} -m64")
@@ -169,7 +169,7 @@ if(QUIC_TLS STREQUAL "openssl")
         OUTPUT ${QUIC_BUILD_DIR}/openssl/include
         OUTPUT ${QUIC_BUILD_DIR}/openssl/lib/libcrypto.so
         OUTPUT ${QUIC_BUILD_DIR}/openssl/lib/libssl.so
-        COMMAND ./Configure linux-x86_64 enable-tls1_3 --prefix=${QUIC_BUILD_DIR}/openssl
+        COMMAND ./config enable-tls1_3 --prefix=${QUIC_BUILD_DIR}/openssl
         COMMAND make -j$(nproc)
         COMMAND make install_sw)
     add_custom_target(OpenSSL
