@@ -11,11 +11,11 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
     )
 else()
     set(SOURCES
-        datapath_linux.c
+        datapath_unix.c
         hashtable.c
         inline.c
-        platform_linux.c
-        storage_linux.c
+        platform_unix.c
+        storage_unix.c
         toeplitz.c
     )
 endif()

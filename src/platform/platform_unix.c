@@ -26,6 +26,12 @@ Environment:
 #include "quic_trace.h"
 #include "quic_platform_dispatch.h"
 
+#ifdef __sun
+#include <thread.h>
+#include <sys/processor.h>
+#define LOG_MAKEPRI(fac, pri)   (((fac) << 3) | (pri))
+#endif
+
 #define QUIC_MAX_LOG_MSG_LEN        1024 // Bytes
 
 #ifdef QUIC_PLATFORM_DISPATCH_TABLE
@@ -551,7 +557,11 @@ QuicProcCurrentNumber(
     void
     )
 {
+#ifdef __sun
+    return (uint32_t)getcpuid();
+#else
     return (uint32_t)sched_getcpu();
+#endif
 }
 
 QUIC_STATUS
@@ -912,6 +922,14 @@ QuicThreadCreate(
         QUIC_TEL_ASSERT(Config->IdealProcessor < 64);
         // TODO - Set Linux equivalent of ideal processor.
         if (Config->Flags & QUIC_THREAD_FLAG_SET_AFFINITIZE) {
+#ifdef __sun
+            pthread_attr_setscope(&Attr, PTHREAD_SCOPE_SYSTEM);
+            uint8_t cpuId = Config->IdealProcessor + 1;;
+#define USE_CPUS 1
+            if (processor_bind(P_LWPID, cpuId, (((cpuId % 2) * 64) + (cpuId / 2)) % USE_CPUS, NULL) == -1) {
+                QuicTraceLogWarning("[qpal] processor_bind failed.");
+            }
+#else
             cpu_set_t CpuSet;
             CPU_ZERO(&CpuSet);
             CPU_SET(Config->IdealProcessor, &CpuSet);
@@ -921,6 +939,7 @@ QuicThreadCreate(
                     "[ lib] ERROR, %s.",
                     "pthread_attr_setaffinity_np failed");
             }
+#endif
         } else {
             // TODO - Set Linux equivalent of NUMA affinity.
         }
@@ -975,7 +994,13 @@ QuicCurThreadID(
     )
 {
     QUIC_STATIC_ASSERT(sizeof(pid_t) <= sizeof(uint32_t), "PID size exceeds the expected size");
+#if defined(__linux__)
     return syscall(__NR_gettid);
+#elif defined(__sun)
+    return thr_self();
+#else // fallback
+    return (pid_t) pthread_self();
+#endif
 }
 
 void

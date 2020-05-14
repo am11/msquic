@@ -123,11 +123,11 @@ The following section details how to build MsQuic purely with CMake commands.
 
 ## Install Dependencies
 
-### Linux
+### Linux/Debian
 
 The following are generally required. Actual installations may vary.
 
-```
+```sh
 sudo apt-add-repository ppa:lttng/stable-2.10
 sudo apt-get update
 sudo apt-get install cmake
@@ -140,20 +140,20 @@ sudo apt-get install lttng-tools
 
 ### Windows
 
-```
+```cmd
 mkdir bld && cd bld
 cmake -g 'Visual Studio 16 2019' -A x64 -DQUIC_ARCH=x64 -DQUIC_TLS=schannel ..
 ```
 
-### Linux
+### Unix
 
-```
+```sh
 mkdir bld && cd bld
-cmake -g 'Linux Makefiles' -A x64 -DQUIC_ARCH=x64 -DQUIC_TLS=openssl ..
+cmake -DQUIC_ARCH=x64 -DQUIC_TLS=openssl ..
 ```
 
 ## Running a Build
 
-```
+```sh
 cmake --build .
 ```
